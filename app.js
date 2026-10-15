@@ -46,9 +46,10 @@
     q9a: ["More variety", "Better hygiene", "Lower prices", "More seating", "Faster service", "Healthier options", "Other"],
     yesno: ["Yes", "No"],
     q11b: ["Live music", "Kids' activities", "Festive celebrations", "Flea/pop-up markets", "Workshops", "Fitness sessions", "Movie screenings", "Sales/offers", "Other"],
-    q12: ["WhatsApp", "Instagram", "Email", "SMS", "Mall website", "Don't contact me"],
+    q2c: ["Stores & brands", "Food", "Ambience", "Events", "Cleanliness", "Helpful staff", "Kids' fun", "Other"],
+    q12: ["WhatsApp", "Instagram", "Don't contact me"],
   };
-  const SECTIONS = ["Quick start", "Your visit", "Facilities", "Stores & food", "Staff & events", "Wrap-up"];
+  const STEPS = 6;
   const STAR_WORDS = ["Terrible", "Poor", "Okay", "Good", "Loved it!"];
 
   /* ---- Answers ----------------------------------------------------------- */
@@ -62,7 +63,6 @@
     q2c: () => A.q2 === 5,
     q3a: () => A.q3 != null && A.q3 <= 6,
     q3b: () => A.q3 >= 7 && A.q3 <= 8,
-    q3c: () => A.q3 >= 9,
     q7a: () => A.q7 === "Partly" || A.q7 === "No",
     q9a: () => typeof A.q9 === "number" && A.q9 <= 3,
     q10x: () => A.q10 === "Yes",
@@ -70,8 +70,8 @@
     q14a: () => A.q14 === "Yes",
   };
   const RULE_KEYS = {
-    q1a: ["q1a", "q1a_other"], q2a: ["q2a", "q2a_text"], q2b: ["q2b", "q2b_text"], q2c: ["q2c"],
-    q3a: ["q3a"], q3b: ["q3b"], q3c: ["q3c"], q7a: ["q7a"], q9a: ["q9a", "q9a_other"],
+    q1a: ["q1a", "q1a_other"], q2a: ["q2a", "q2a_other"], q2b: ["q2b", "q2b_other"], q2c: ["q2c", "q2c_other"],
+    q3a: ["q3a"], q3b: ["q3b"], q7a: ["q7a"], q9a: ["q9a", "q9a_other"],
     q10x: ["q10a", "q10b"], q11a: ["q11a"], q14a: ["q14a_name", "q14a_contact", "q14a_consent"],
   };
 
@@ -87,7 +87,8 @@
   const CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
   const STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6c.4 0 .7.2.9.6l2.4 4.9 5.4.8c.9.1 1.2 1.2.6 1.8l-3.9 3.8.9 5.4c.2.9-.8 1.6-1.6 1.1L12 18.5 7.2 21c-.8.5-1.8-.2-1.6-1.1l.9-5.4-3.9-3.8c-.6-.6-.3-1.7.6-1.8l5.4-.8L11 3.2c.3-.4.6-.6 1-.6z"/></svg>';
   const ARROW = '<svg class="go" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
-  const toneFor = (v, max) => (max === 10 ? (v <= 6 ? "var(--pink)" : v <= 8 ? "var(--amber)" : "var(--lime)") : (v <= 2 ? "var(--pink)" : v === 3 ? "var(--amber)" : "var(--lime)"));
+  const toneFor = (v, max) => (max === 10 ? (v <= 6 ? "var(--rose)" : v <= 8 ? "var(--amber)" : "var(--brand)") : (v <= 2 ? "var(--rose)" : v === 3 ? "var(--amber)" : "var(--brand)"));
+  const LOGO = '<img class="hero-logo" src="assets/logo-felix-plaza-white.png" width="700" height="528" alt="Felix Plaza">';
 
   /* ---- Building blocks (return HTML) ------------------------------------- */
   const Q = (id, title, body, help = "", required = false) =>
@@ -142,11 +143,10 @@
 
   const banner = (img, title) => `<div class="banner" style="background-image:url(assets/img/${img}.webp)" aria-hidden="true"><span>${title}</span></div>`;
 
+  // The opening photo, with the logo and greeting inside it.
   const hero = () =>
-    `<div class="hero" style="background-image:url(assets/img/welcome.webp)"></div>
-    <div class="hero-copy">
-      <p class="hello">${MODE === "quick" ? "Hi! Thanks for visiting." : "Hi! Tell us about your visit."}</p>
-      <p class="hello-sub">${MODE === "quick" ? "3 quick questions · under 30 seconds" : "About 3 minutes · only the first 3 questions are required"}</p>
+    `<div class="hero" style="background-image:url(assets/img/welcome.webp)">${LOGO}
+      <p class="hello">${MODE === "quick" ? "Hi! Thanks for visiting Felix Plaza." : "Hi! Tell us about your visit."}</p>
     </div>`;
 
   /* ---- Screens ----------------------------------------------------------- */
@@ -155,6 +155,8 @@
     s1: {
       sec: 0,
       valid: () => !!A.q1,
+      // Picking an answer moves on by itself; Next only appears for "First time".
+      nextOnlyIf: () => RULES.q1a(),
       html: () => Q("q1", "How often do you visit Felix Plaza?", single("q1", OPT.q1) +
         follow("q1a", Q("q1a", "Welcome! How did you hear about us?", chips("q1a", OPT.q1a, { multi: false, other: true })))),
     },
@@ -162,17 +164,16 @@
       sec: 0,
       valid: () => !!A.q2,
       html: () => Q("q2", "How would you rate your visit today?", stars("q2", { big: true })) +
-        follow("q2a", Q("q2a", "Sorry about that. What went wrong?", chips("q2a", OPT.issues) + text("q2a_text", "Anything you'd like to add?", true), "Pick any that apply")) +
-        follow("q2b", Q("q2b", "What would have made it a 5?", chips("q2b", OPT.issues) + text("q2b_text", "Anything you'd like to add?", true), "Pick any that apply")) +
-        follow("q2c", Q("q2c", "Lovely! What did you enjoy most?", text("q2c", "The food, a store, the evening…"))),
+        follow("q2a", Q("q2a", "Sorry about that. What went wrong?", chips("q2a", OPT.issues, { other: true }), "Pick any that apply")) +
+        follow("q2b", Q("q2b", "What would have made it a 5?", chips("q2b", OPT.issues, { other: true }), "Pick any that apply")) +
+        follow("q2c", Q("q2c", "Lovely! What did you enjoy most?", chips("q2c", OPT.q2c, { other: true }), "Pick any that apply")),
     },
     s3: {
       sec: 0,
       valid: () => A.q3 != null,
       html: () => Q("q3", "How likely are you to recommend Felix Plaza to a friend or family member?", nps("q3")) +
         follow("q3a", Q("q3a", "What's one thing we could do better?", text("q3a", "Be as honest as you like", true))) +
-        follow("q3b", Q("q3b", "What would make you more likely to recommend us?", text("q3b", "One thing would make the difference…", true))) +
-        follow("q3c", Q("q3c", "What would you tell them about us?", text("q3c", "In your own words", true))),
+        follow("q3b", Q("q3b", "What would make you more likely to recommend us?", text("q3b", "One thing would make the difference…", true))),
     },
     checkpoint: { sec: 0, plain: true },
     s4: {
@@ -183,7 +184,7 @@
     },
     s5: {
       sec: 2,
-      html: () => Q("q6", "How were our facilities?", `<div class="rows">${OPT.q6.map(([key, label]) =>
+      html: () => banner("facilities", "Facilities") + Q("q6", "How were our facilities?", `<div class="rows">${OPT.q6.map(([key, label]) =>
         `<div class="row"><p class="row-name" id="r-${key}">${label}</p>${stars("q6", { row: key, skip: "Didn't use" })}
           <div class="reveal" data-show-row="${key}" inert><div><div class="follow">${text(`q6_notes.${key}`, "Tell us more")}</div></div></div>
         </div>`).join("")}</div>`, "Rate what you used. Skip the rest."),
@@ -192,8 +193,7 @@
       sec: 3,
       html: () => banner("food", "Stores & food") +
         Q("q7", "Did you find what you were looking for?", chips("q7", OPT.q7, { multi: false }) +
-          follow("q7a", Q("q7a", "What were you looking for?", text("q7a", "A brand, a product, a service…")))) +
-        Q("q8", "Which brands or stores would you like to see here?", text("q8", "e.g. a sports store or a bookshop")),
+          follow("q7a", Q("q7a", "What were you looking for?", text("q7a", "A brand, a product, a service…")))),
     },
     s7: {
       sec: 3,
@@ -340,11 +340,6 @@
       else if (kind === "single") b.setAttribute("aria-checked", String(val === v));
       else if (kind === "skip") b.setAttribute("aria-pressed", String(val === v));
     });
-    // Q2a/Q2b: picking "Other" points the text box at it.
-    ["q2a", "q2b"].forEach((q) => {
-      const ta = $(`[data-q="${q}_text"]`, host);
-      if (ta) ta.placeholder = (A[q] || []).includes("Other") ? "Tell us what else" : "Anything you'd like to add?";
-    });
   }
 
   function open(el, on) {
@@ -374,7 +369,6 @@
     });
     if (animate) void group.offsetWidth; // restart the pop
     $$(".star", group).forEach((s, i) => { if (i < n) s.classList.add("on"); });
-    group.style.setProperty("--c", big ? tone : "var(--lime)");
     const word = big && group.parentElement.querySelector("[data-word]");
     if (word) {
       word.style.setProperty("--c", tone);
@@ -408,7 +402,7 @@
   function sparkle(el) {
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const r = el.getBoundingClientRect();
-    const colors = ["#c3ef4b", "#ffffff", "#ff5d8f", "#c3ef4b"];
+    const colors = ["#352761", "#f5b400", "#e0476f", "#7a68c9"];
     for (let i = 0; i < 12; i++) {
       const s = document.createElement("span");
       const a = (Math.PI * 2 * i) / 12 + Math.random() * 0.4;
@@ -439,7 +433,6 @@
     const firstWithHero = i === 0 && (id === "s1" || id === "s2");
     app.classList.toggle("is-hero", firstWithHero);
     app.classList.toggle("no-chrome", id === "thanks");
-    $("#dock").hidden = !!SCREENS[id].plain;
     $("#back").style.visibility = i === 0 ? "hidden" : "";
     updateTop();
     updateNext(true);
@@ -454,26 +447,30 @@
     const bar = $("#bar");
     if (MODE === "quick") {
       const qi = Math.min(index, 2);
-      $("#stepLabel").innerHTML = `<b>Question ${qi + 1} of 3</b>`;
+      $("#stepLabel").textContent = `Question ${qi + 1} of 3`;
       bar.innerHTML = [0, 1, 2].map((n) => `<span><i style="transform:scaleX(${n <= qi ? 1 : 0})"></i></span>`).join("");
       return;
     }
     const sec = SCREENS[id].sec ?? 5;
-    $("#stepLabel").innerHTML = `<b>Step ${sec + 1} of 6</b> · ${SECTIONS[sec]}`;
-    if (!bar.children.length) bar.innerHTML = SECTIONS.map(() => "<span><i></i></span>").join("");
+    $("#stepLabel").textContent = `Step ${sec + 1} of ${STEPS}`;
+    if (!bar.children.length) bar.innerHTML = "<span><i></i></span>".repeat(STEPS);
     const all = ORDER.filter((s) => SCREENS[s].sec != null && !SCREENS[s].plain);
-    SECTIONS.forEach((_, n) => {
+    for (let n = 0; n < STEPS; n++) {
       const inSec = all.filter((s) => SCREENS[s].sec === n);
       const doneCount = inSec.filter((s) => ORDER.indexOf(s) <= index).length;
       // Steps skipped entirely (quick mode's "tell us more" starts at step 2) count as done.
       const fill = id === "thanks" ? 1 : inSec.length ? doneCount / inSec.length : n < sec ? 1 : 0;
       bar.children[n].firstChild.style.transform = `scaleX(${fill})`;
-    });
+    }
   }
 
   let wasValid = null;
+  const dock = $("#dock");
   function updateNext(fresh = false) {
     const s = SCREENS[currentId()];
+    const showDock = !s.plain && (!s.nextOnlyIf || s.nextOnlyIf());
+    if (showDock && dock.hidden && !fresh) { dock.classList.remove("rise"); void dock.offsetWidth; dock.classList.add("rise"); }
+    dock.hidden = !showDock;
     const ok = s.valid ? s.valid() : true;
     nextBtn.disabled = !ok;
     nextBtn.textContent = s.submit ? "Submit" : "Next";
@@ -594,9 +591,9 @@
 
   function renderCheckpoint() {
     $('[data-screen="checkpoint"]').innerHTML =
-      `<div class="done">${TICK}
-        <h1>That's the important part done</h1>
-        <p>Got two more minutes? The next few questions help us fix the little things.</p>
+      `<div class="done checkpoint">${TICK}
+        <h1>Got two more minutes?</h1>
+        <p>A few more quick questions help us get the little things right.</p>
         <div class="actions">
           <button type="button" class="btn" data-act="continue">Keep going</button>
           <button type="button" class="btn btn-ghost" data-act="finish">Submit now</button>
@@ -623,16 +620,25 @@
         <span class="more-text"><strong>Share it on Google</strong><span>It helps others find us</span></span>${ARROW}</a>`);
     }
 
-    $('[data-screen="thanks"]').innerHTML =
-      `<div class="hero" style="background-image:url(assets/img/welcome.webp)"></div>
-      <div class="done" style="padding-top:0;margin-top:-56px;position:relative">${TICK}
+    // Instagram and WhatsApp only show up for guests who picked them in Q12.
+    const picked = A.q12 || [];
+    const links = [
+      ["https://felixplaza.com/events", "What's on", '<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/>'],
+      ["https://felixplaza.com/offers", "Offers", '<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.5"/>'],
+    ];
+    if (picked.includes("Instagram")) links.push(["https://www.instagram.com/felixplazaggm/", "Instagram", '<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.6"/>']);
+    if (picked.includes("WhatsApp")) links.push(["https://wa.me/919355778800", "WhatsApp", '<path d="M4 20l1.3-4A8 8 0 1 1 8 18.8z"/>']);
+
+    const el = $('[data-screen="thanks"]');
+    el.classList.add("thanks");
+    el.innerHTML =
+      `<div class="hero" style="background-image:url(assets/img/welcome.webp)">${LOGO}</div>
+      <div class="done">${TICK}
         <h1>Thank you!</h1>
         <p>${body}</p>
         ${cards.join("")}
-        <div class="links">
-          <a href="https://felixplaza.com/events" target="_blank" rel="noopener">What's on</a>
-          <a href="https://felixplaza.com/offers" target="_blank" rel="noopener">Offers</a>
-        </div>
+        <div class="links">${links.map(([href, label, icon]) =>
+          `<a href="${href}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg>${label}</a>`).join("")}</div>
       </div>`;
     setTimeout(() => { const t = $('[data-screen="thanks"] .tick'); if (t && currentId() === "thanks") sparkle(t); }, 950);
   }

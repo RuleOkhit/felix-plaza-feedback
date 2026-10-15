@@ -16,7 +16,7 @@ Then open http://localhost:5180.
 
 | Link | What guests get |
 | --- | --- |
-| `/` | **Full form:** 14 questions over 6 steps, about 3 minutes. |
+| `/` | **Full form:** 6 steps, about 2–3 minutes. |
 | `/?mode=quick` | **Quick mode:** overall rating, recommend score, and "anything else?". Under 30 seconds. Meant for QR stands. |
 
 In the full form:
@@ -26,6 +26,14 @@ In the full form:
 - Quick mode's thank-you screen offers **"Have 2 more minutes? Tell us more"**. It opens the full form at step 2 under the same response ID, so the answers combine into one response.
 
 Follow-ups open right under the question that triggers them, only while the answer matches. For example, 1–2 stars opens "What went wrong?", and a low facility rating opens a note for that row.
+
+Changes from the spec, made after design review:
+
+- Q2a, Q2b and Q2c are tap-to-pick chips, with "Other" opening a short box, instead of free-text boxes.
+- Q3c ("What would you tell them?") is dropped.
+- Q8 ("brands you'd like to see") is dropped.
+- Q12 offers only WhatsApp, Instagram and "Don't contact me". The thank-you screen adds Instagram and WhatsApp links only for guests who picked them.
+- The opening question moves on by itself. Next only appears when "First time" opens its follow-up.
 
 ## Link options
 
