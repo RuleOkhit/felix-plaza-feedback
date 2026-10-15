@@ -33,7 +33,7 @@ Changes from the spec, made after design review:
 - Q3c ("What would you tell them?") is dropped.
 - Q8 ("brands you'd like to see") is dropped.
 - Q12 offers only WhatsApp, Instagram and "Don't contact me". The thank-you screen adds Instagram and WhatsApp links only for guests who picked them.
-- The opening question moves on by itself. Next only appears when "First time" opens its follow-up.
+- Next appears only once a required question is answered. Picking "First time" scrolls down to "How did you hear about us?".
 
 ## Link options
 

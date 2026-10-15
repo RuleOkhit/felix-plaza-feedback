@@ -55,6 +55,9 @@
   /* ---- Answers ----------------------------------------------------------- */
   const A = { q6: {}, q6_notes: {} };
 
+  // Single-choice questions whose answer can be changed but not cleared.
+  const REQUIRED = new Set(["q1"]);
+
   // Follow-ups: shown (and kept in the saved answers) only while their rule holds.
   const RULES = {
     q1a: () => A.q1 === "First time",
@@ -155,8 +158,6 @@
     s1: {
       sec: 0,
       valid: () => !!A.q1,
-      // Picking an answer moves on by itself; Next only appears for "First time".
-      nextOnlyIf: () => RULES.q1a(),
       html: () => Q("q1", "How often do you visit Felix Plaza?", single("q1", OPT.q1) +
         follow("q1a", Q("q1a", "Welcome! How did you hear about us?", chips("q1a", OPT.q1a, { multi: false, other: true })))),
     },
@@ -282,7 +283,8 @@
     const b = e.target.closest("button[data-q]");
     if (b) {
       const { q, v, kind, row } = b.dataset;
-      if (kind === "single") A[q] = A[q] === v && SCREENS[currentId()].valid == null ? undefined : v;
+      // Tapping a picked answer again clears it, except on the required questions.
+      if (kind === "single") A[q] = A[q] === v && !REQUIRED.has(q) ? undefined : v;
       if (kind === "multi") {
         let list = Array.isArray(A[q]) ? A[q].slice() : [];
         list = list.includes(v) ? list.filter((x) => x !== v) : [...list, v];
@@ -297,8 +299,6 @@
       }
       buzz();
       afterChange(b);
-      // Q1 moves on by itself, unless "First time" opens its follow-up.
-      if (q === "q1" && A.q1 && A.q1 !== "First time") setTimeout(() => currentId() === "s1" && next(), 420);
       return;
     }
 
@@ -348,15 +348,44 @@
   }
 
   function updateReveals() {
-    $$("[data-show]", host).forEach((el) => open(el, RULES[el.dataset.show]()));
+    let opened = null;
+    const set = (el, on) => {
+      if (on && !el.classList.contains("open")) opened = el;
+      open(el, on);
+    };
+    $$("[data-show]", host).forEach((el) => set(el, RULES[el.dataset.show]()));
     $$("[data-show-other]", host).forEach((el) => {
       const v = A[el.dataset.showOther];
-      open(el, v === "Other" || (Array.isArray(v) && v.includes("Other")));
+      set(el, v === "Other" || (Array.isArray(v) && v.includes("Other")));
     });
     $$("[data-show-row]", host).forEach((el) => {
       const v = A.q6[el.dataset.showRow];
-      open(el, typeof v === "number" && v <= 2);
+      set(el, typeof v === "number" && v <= 2);
     });
+    if (opened) bringIntoView(opened);
+  }
+
+  // When a follow-up opens below the fold (e.g. "First time" → "How did you
+  // hear about us?"), glide down so its options sit just above the Next button.
+  // Runs once the follow-up has finished unfolding (so the page is tall enough
+  // to scroll), with a timer as a fallback in case that event never comes.
+  let pending = null;
+  function bringIntoView(el) {
+    if (pending) pending();
+    const go = () => {
+      cleanup();
+      if (!el.classList.contains("open")) return;
+      const r = el.getBoundingClientRect();
+      const bottom = r.top + el.firstElementChild.scrollHeight;
+      const limit = innerHeight - (dock.hidden ? 0 : dock.offsetHeight) - 12;
+      const by = Math.min(bottom - limit, r.top - 90); // never push its top under the bar
+      if (by > 0) window.scrollBy({ top: by, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    };
+    const onEnd = (e) => { if (e.target === el && e.propertyName === "grid-template-rows") go(); };
+    const timer = setTimeout(go, 700);
+    const cleanup = () => { clearTimeout(timer); el.removeEventListener("transitionend", onEnd); pending = null; };
+    el.addEventListener("transitionend", onEnd);
+    pending = cleanup;
   }
 
   function paintStars(group, n, animate) {
@@ -402,7 +431,7 @@
   function sparkle(el) {
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const r = el.getBoundingClientRect();
-    const colors = ["#352761", "#f5b400", "#e0476f", "#7a68c9"];
+    const colors = ["#6f5ce0", "#f5b400", "#e0476f", "#9284ee"];
     for (let i = 0; i < 12; i++) {
       const s = document.createElement("span");
       const a = (Math.PI * 2 * i) / 12 + Math.random() * 0.4;
@@ -418,6 +447,7 @@
   let index = 0;
   const app = $("#app");
   const nextBtn = $("#next");
+  const dock = $("#dock");
   const currentId = () => ORDER[index];
 
   function show(i, { push = true, back = false } = {}) {
@@ -464,24 +494,25 @@
     }
   }
 
-  let wasValid = null;
-  const dock = $("#dock");
+  // Next stays out of the way until the screen's required answer is in, then
+  // slides up. Screens with only optional questions show it straight away.
   function updateNext(fresh = false) {
     const s = SCREENS[currentId()];
-    const showDock = !s.plain && (!s.nextOnlyIf || s.nextOnlyIf());
+    const ok = s.valid ? s.valid() : true;
+    const showDock = !s.plain && ok;
     if (showDock && dock.hidden && !fresh) { dock.classList.remove("rise"); void dock.offsetWidth; dock.classList.add("rise"); }
     dock.hidden = !showDock;
-    const ok = s.valid ? s.valid() : true;
     nextBtn.disabled = !ok;
     nextBtn.textContent = s.submit ? "Submit" : "Next";
-    // A one-off shine the moment the button wakes up.
-    if (ok && wasValid === false && !fresh) { nextBtn.classList.remove("shine"); void nextBtn.offsetWidth; nextBtn.classList.add("shine"); }
-    wasValid = ok;
   }
 
+  // A quick double tap shouldn't skip a screen.
+  let lastNav = 0;
   function next() {
     const s = SCREENS[currentId()];
     if (s.valid && !s.valid()) return;
+    if (Date.now() - lastNav < 450) return;
+    lastNav = Date.now();
     if (s.submit) { if (validateContact()) finish(); return; }
     save("partial");
     show(index + 1);
