@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f6f4ef">
+  <title>Your visit · Felix Plaza</title>
+  <meta name="description" content="Tell us how your visit to Felix Plaza went.">
+  <!-- Keep this page out of search engines -->
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+  <meta name="googlebot" content="noindex, nofollow">
+  <meta name="bingbot" content="noindex, nofollow">
+  <link rel="icon" href="assets/icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500&family=Jost:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app">
+    <header class="top">
+      <button type="button" class="back" id="back" aria-label="Back" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6l-6 6 6 6"/></svg>
+      </button>
+      <img class="logo" src="assets/logo-felix-plaza.png" width="700" height="528" alt="Felix Plaza">
+      <span class="count" id="count" aria-hidden="true"></span>
+    </header>
+
+    <!-- 1 · How was it -->
+    <section class="step is-active" data-step="rating">
+      <p class="lead">Thank you for spending time with us.</p>
+      <h1 class="q" id="q1">How was your visit today?</h1>
+      <div class="options" role="radiogroup" aria-labelledby="q1">
+        <button type="button" role="radio" aria-checked="false" data-v="4">Wonderful</button>
+        <button type="button" role="radio" aria-checked="false" data-v="3">Good</button>
+        <button type="button" role="radio" aria-checked="false" data-v="2">Could have been better</button>
+        <button type="button" role="radio" aria-checked="false" data-v="1">Not good</button>
+      </div>
+    </section>
+
+    <!-- 2 · Tell us a little -->
+    <section class="step" data-step="note">
+      <h1 class="q" id="q2"></h1>
+      <label class="sr-only" for="note">Your thoughts</label>
+      <textarea id="note" rows="5" maxlength="800" placeholder="Write as much or as little as you like"></textarea>
+      <div class="actions">
+        <button type="button" class="btn" id="noteNext">Continue</button>
+        <button type="button" class="link" id="noteSkip">Skip</button>
+      </div>
+    </section>
+
+    <!-- 3 · Stay in touch -->
+    <section class="step" data-step="contact">
+      <h1 class="q" id="q3"></h1>
+      <div class="options" role="radiogroup" aria-labelledby="q3" id="contactChoice">
+        <button type="button" role="radio" aria-checked="false" data-v="yes">Yes, please</button>
+        <button type="button" role="radio" aria-checked="false" data-v="no">No, thank you</button>
+      </div>
+      <div class="fields" id="fields" hidden>
+        <label class="field">
+          <span>Name</span>
+          <input id="name" type="text" autocomplete="name" maxlength="80">
+        </label>
+        <label class="field">
+          <span>Mobile number</span>
+          <input id="phone" type="tel" inputmode="numeric" autocomplete="tel-national" maxlength="11" placeholder="10 digits">
+        </label>
+        <p class="error" id="error" hidden>Please enter a 10 digit mobile number.</p>
+        <div class="actions">
+          <button type="button" class="btn" id="send">Send</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Thank you -->
+    <section class="step step-end" data-step="thanks" tabindex="-1">
+      <h1 class="q" id="t1">Thank you.</h1>
+      <p class="lead" id="t2"></p>
+      <a class="quiet" id="t3" href="#" target="_blank" rel="noopener" hidden></a>
+      <button type="button" class="link restart" id="restart" hidden>Start again</button>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
